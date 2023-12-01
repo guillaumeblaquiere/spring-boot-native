@@ -1,0 +1,22 @@
+export PROJECT_ID="gdglyon-cloudrun"
+
+mvn spring-boot:build-image -Dspring-boot.build-image.imageName=gcr.io/${PROJECT_ID}/spring-boot-native-off -Dmaven.test.skip=true
+mvn spring-boot:build-image -Dspring-boot.build-image.imageName=gcr.io/${PROJECT_ID}/spring-boot-native-on -P native -Dmaven.test.skip=true
+
+docker push gcr.io/${PROJECT_ID}/spring-boot-native-off
+docker push gcr.io/${PROJECT_ID}/spring-boot-native-on
+
+gcloud run deploy spring-boot-native-off --image=gcr.io/${PROJECT_ID}/spring-boot-native-off --platform=managed --region=us-central1 --allow-unauthenticated --memory=595Mi
+gcloud run deploy spring-boot-native-on --image=gcr.io/${PROJECT_ID}/spring-boot-native-on --platform=managed --region=us-central1 --allow-unauthenticated --memory=128Mi
+#gcloud run deploy spring-boot-native-off --image=gcr.io/${PROJECT_ID}/spring-boot-native-off --platform=managed --region=us-central1 --allow-unauthenticated --memory=640Mi --cpu-boost
+
+LEGACY_CLOUD_RUN_URL=$(gcloud run services describe spring-boot-native-off --platform=managed --region=us-central1  --format='value(status.address.url)')
+NATIVE_CLOUD_RUN_URL=$(gcloud run services describe spring-boot-native-on --platform=managed --region=us-central1  --format='value(status.address.url)')
+
+curl ${LEGACY_CLOUD_RUN_URL}
+curl ${NATIVE_CLOUD_RUN_URL}
+
+curl -o /dev/null -s curl ${LEGACY_CLOUD_RUN_URL}/kill && curl -w "%{time_total}\n" -o /dev/null -s curl ${LEGACY_CLOUD_RUN_URL}
+curl -o /dev/null -s curl ${NATIVE_CLOUD_RUN_URL}/kill && curl -w "%{time_total}\n" -o /dev/null -s curl ${NATIVE_CLOUD_RUN_URL}
+
+/perf-test.sh gcr.io/${PROJECT_ID}/spring-boot-native-off gcr.io/${PROJECT_ID}/spring-boot-native-on
