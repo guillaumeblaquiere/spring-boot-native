@@ -1,4 +1,4 @@
-export PROJECT_ID="gdglyon-cloudrun"
+export PROJECT_ID="<your project id>"
 
 mvn spring-boot:build-image -Dspring-boot.build-image.imageName=gcr.io/${PROJECT_ID}/spring-boot-native-off -Dmaven.test.skip=true
 mvn spring-boot:build-image -Dspring-boot.build-image.imageName=gcr.io/${PROJECT_ID}/spring-boot-native-on -P native -Dmaven.test.skip=true
